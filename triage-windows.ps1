@@ -59,8 +59,22 @@ Get-MpThreat > "$OutDir\defender_threats.txt"
 Get-MpComputerStatus | Out-File "$OutDir\defender_status.txt"
 
 # --- 10. Suspected Data Staging ---
-Get-ChildItem -Path C:\ -Include *.zip,*.rar,*.7z -Recurse -ErrorAction SilentlyContinue |
-    Sort-Object LastWriteTime -Descending | Select-Object FullName,Length,LastWriteTime -First 20 |
-    Out-File "$OutDir\archives.txt"
+$UserDirs = @(
+    "$env:USERPROFILE\Desktop",
+    "$env:USERPROFILE\Downloads",
+    "$env:USERPROFILE\Documents",
+    "C:\Users\Public",
+    "$env:TEMP",
+    "$env:APPDATA"
+)
+
+foreach ($dir in $UserDirs) {
+    if (Test-Path $dir) {
+        Get-ChildItem -Path $dir -Include *.zip,*.rar,*.7z -Recurse -Force -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object FullName,Length,LastWriteTime -First 20 |
+            Out-File "$OutDir\archives_$((Split-Path $dir -Leaf)).txt"
+    }
+}
 
 Write-Output "[+] Collection complete. Review output in $OutDir"
